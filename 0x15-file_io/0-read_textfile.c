@@ -1,41 +1,44 @@
 #include "main.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 /**
- * _strlen - finds the length of a string
- * @str: pointer to the string
+ * read_textfile - reads a text file and prints it to the POSIX standard output
+ * @filename: name of the file to read
+ * @letters: number of letters it should read and print
  *
- * Return: length of the string
+ * Return: actual number of letters it could read and print
  */
-size_t _strlen(char *str)
-{
-	size_t i;
-
-	for (i = 0; str[i]; i++)
-		;
-	return (i);
-}
-
-/**
- * create_file - creates a file.
- * @filename: name of the file to create
- * @text_content: NULL terminated string to write to the file
- *
- * Return: 1 on success, -1 on failure
- */
-int create_file(const char *filename, char *text_content)
+ssize_t read_textfile(const char *filename, size_t letters)
 {
 	int fd;
-	ssize_t len = 0;
+	ssize_t lenr, lenw;
+	char *buffer;
 
 	if (filename == NULL)
-		return (-1);
-	fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+		return (0);
+	fd = open(filename, O_RDONLY);
 	if (fd == -1)
-		return (-1);
-	if (text_content != NULL)
-		len = write(fd, text_content, _strlen(text_content));
+		return (0);
+	buffer = malloc(sizeof(char) * letters);
+	if (buffer == NULL)
+	{
+		close(fd);
+		return (0);
+	}
+	lenr = read(fd, buffer, letters);
 	close(fd);
-	if (len == -1)
-		return (-1);
-	return (1);
+	if (lenr == -1)
+	{
+		free(buffer);
+		return (0);
+	}
+	lenw = write(STDOUT_FILENO, buffer, lenr);
+	free(buffer);
+	if (lenr != lenw)
+		return (0);
+	return (lenw);
 }
